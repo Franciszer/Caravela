@@ -34,7 +34,7 @@ contract ContractTest is Test {
 
         collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
 
-        Order.ERC1155_sale memory order = Order.ERC1155_sale({
+        Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
             value: _value,
@@ -49,6 +49,9 @@ contract ContractTest is Test {
         marketplace.make_sale(order);
 
         assertEq(collection.balanceOf(address(marketplace), _id), _amount);
+
+        bytes32 uid = Order.compute_order_uid(order);
+        assertEq(marketplace.orders(uid), true);
     }
 
     function testTakeSale() public {
@@ -58,7 +61,7 @@ contract ContractTest is Test {
 
         collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
 
-        Order.ERC1155_sale memory order = Order.ERC1155_sale({
+        Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
             value: _value,
@@ -80,6 +83,9 @@ contract ContractTest is Test {
 
         marketplace.take_sale(order);
         assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _amount);
+
+        bytes32 uid = Order.compute_order_uid(order);
+        assertEq(marketplace.orders(uid), false);
     }
 
     function testCurrencyTransfer() public {
@@ -89,7 +95,7 @@ contract ContractTest is Test {
 
         collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
 
-        Order.ERC1155_sale memory order = Order.ERC1155_sale({
+        Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
             value: _value,
@@ -123,7 +129,7 @@ contract ContractTest is Test {
 
         collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
 
-        Order.ERC1155_sale memory order = Order.ERC1155_sale({
+        Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
             value: _value,
@@ -139,5 +145,8 @@ contract ContractTest is Test {
 
         marketplace.cancel_sale(order);
         assertEq(collection.balanceOf(MAKER_ADDRESS, _id), _amount);
+
+        bytes32 uid = Order.compute_order_uid(order);
+        assertEq(marketplace.orders(uid), false);
     }
 }

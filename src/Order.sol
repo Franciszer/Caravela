@@ -17,7 +17,7 @@ library Order {
     /// @param value value of the order (see ERC1155)
     /// @param collection ERC1155 collecction contract
     /// @param kind type of order
-    struct ERC1155_sale {
+    struct ERC1155Sale {
         uint256 id;
         uint256 value;
         uint256 amount;
@@ -30,7 +30,7 @@ library Order {
     /// @dev compute unique id of an ERC1155 order
     /// @param order order
     /// @return uid order uid
-    function compute_order_uid(ERC1155_sale memory order)
+    function compute_order_uid(ERC1155Sale memory order)
         internal
         pure
         returns (bytes32)
