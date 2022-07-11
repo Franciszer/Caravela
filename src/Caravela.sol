@@ -24,7 +24,10 @@ contract Caravela is Context, ERC1155Receiver {
 
         require(order.kind == Order.Kind.sale, "make_sale: order is not a sale");
 
-        require(_msgSender() == order.emitter, "make_sale: emitter is not the owner of the token");
+        require(
+            _msgSender() == order.emitter,
+            "make_sale: emitter is not the owner of the token"
+        );
 
         IERC1155 collection = order.collection;
 
@@ -66,6 +69,25 @@ contract Caravela is Context, ERC1155Receiver {
         );
 
         orders[uid] = false;
+    }
+
+    function cancel_sale(Order.ERC1155_sale memory order) external {
+        bytes32 uid = Order.compute_order_uid(order);
+
+        require(orders[uid] == true, "cancel_sale: order is not active");
+
+        require(
+            order.kind == Order.Kind.sale, "cancel_sale: order is not a sale"
+        );
+
+        require(
+            order.emitter == _msgSender(),
+            "cancel_sale: you are not emitter of this sale"
+        );
+
+        order.collection.safeTransferFrom(
+            address(this), order.emitter, order.id, order.amount, new bytes(0x0)
+        );
     }
 
     function onERC1155Received(

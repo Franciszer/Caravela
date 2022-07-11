@@ -47,6 +47,8 @@ contract ContractTest is Test {
         vm.startPrank(MAKER_ADDRESS);
         collection.setApprovalForAll(address(marketplace), true);
         marketplace.make_sale(order);
+
+        assertEq(collection.balanceOf(address(marketplace), _id), _amount);
     }
 
     function testTakeSale() public {
@@ -112,5 +114,30 @@ contract ContractTest is Test {
 
         assertEq(currency.balanceOf(MAKER_ADDRESS), _value);
         assertEq(currency.balanceOf(TAKER_ADDRESS), INITIAL_VALUE - _value);
+    }
+
+    function testCancelSale() public {
+        uint256 _id = 1;
+        uint256 _amount = 10;
+        uint256 _value = 1000;
+
+        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+
+        Order.ERC1155_sale memory order = Order.ERC1155_sale({
+            emitter: MAKER_ADDRESS,
+            id: _id,
+            value: _value,
+            collection: collection,
+            currency: currency,
+            amount: _amount,
+            kind: Order.Kind.sale
+        });
+
+        vm.startPrank(MAKER_ADDRESS);
+        collection.setApprovalForAll(address(marketplace), true);
+        marketplace.make_sale(order);
+
+        marketplace.cancel_sale(order);
+        assertEq(collection.balanceOf(MAKER_ADDRESS, _id), _amount);
     }
 }
