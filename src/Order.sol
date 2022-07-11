@@ -20,9 +20,10 @@ library Order {
     struct ERC1155_sale {
         uint256 id;
         uint256 value;
+        uint256 amount;
         IERC1155 collection;
         IERC20 currency;
-        uint256 amount;
+        address emitter;
         Kind kind;
     }
 

@@ -53,7 +53,7 @@ contract Caravela is Context, ERC1155Receiver {
         );
 
         bool transaction_succeeded =
-            currency.transferFrom(_msgSender(), address(this), order.value);
+            currency.transferFrom(_msgSender(), order.emitter, order.value);
 
         require(
             transaction_succeeded == true, "take_sale: ERC20 token transfer failed"
