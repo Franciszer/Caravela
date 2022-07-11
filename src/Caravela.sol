@@ -24,6 +24,8 @@ contract Caravela is Context, ERC1155Receiver {
 
         require(order.kind == Order.Kind.sale, "make_sale: order is not a sale");
 
+        require(_msgSender() == order.emitter, "make_sale: emitter is not the owner of the token");
+
         IERC1155 collection = order.collection;
 
         require(
@@ -62,6 +64,7 @@ contract Caravela is Context, ERC1155Receiver {
         order.collection.safeTransferFrom(
             address(this), _msgSender(), order.id, order.amount, new bytes(0x0)
         );
+
         orders[uid] = false;
     }
 
