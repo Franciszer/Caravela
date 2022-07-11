@@ -32,7 +32,7 @@ contract ContractTest is Test {
 
         collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
 
-        Order.ERC1155_order memory order = Order.ERC1155_order({
+        Order.ERC1155_sale memory order = Order.ERC1155_sale({
             id: _id,
             value: _value,
             collection: collection,
@@ -53,7 +53,7 @@ contract ContractTest is Test {
 
         collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
 
-        Order.ERC1155_order memory order = Order.ERC1155_order({
+        Order.ERC1155_sale memory order = Order.ERC1155_sale({
             id: _id,
             value: _value,
             collection: collection,

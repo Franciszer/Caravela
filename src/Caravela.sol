@@ -17,7 +17,7 @@ contract Caravela is Context, ERC1155Receiver {
     mapping(bytes32 => bool) public orders;
 
     /// @dev create an order
-    function make_sale(Order.ERC1155_order memory order) external {
+    function make_sale(Order.ERC1155_sale memory order) external {
         bytes32 uid = Order.compute_order_uid(order);
 
         require(orders[uid] == false, "make_sale: order is already active");
@@ -39,7 +39,7 @@ contract Caravela is Context, ERC1155Receiver {
     }
 
     /// @dev fulfill an order
-    function take_sale(Order.ERC1155_order memory order) external {
+    function take_sale(Order.ERC1155_sale memory order) external {
         bytes32 uid = Order.compute_order_uid(order);
 
         require(orders[uid] == true, "take_sale: order is not active");

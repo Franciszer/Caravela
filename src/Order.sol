@@ -6,6 +6,9 @@ import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 /// @dev Order logic
 library Order {
+    bytes32 constant PEPPER =
+        0x35b7e35506707b7002359253b0246a5c6d757ac7d0ec84d97a0110a69d5d7029;
+
     /// @dev order kind
     enum Kind {sale}
 
@@ -14,7 +17,7 @@ library Order {
     /// @param value value of the order (see ERC1155)
     /// @param collection ERC1155 collecction contract
     /// @param kind type of order
-    struct ERC1155_order {
+    struct ERC1155_sale {
         uint256 id;
         uint256 value;
         IERC1155 collection;
@@ -26,11 +29,11 @@ library Order {
     /// @dev compute unique id of an ERC1155 order
     /// @param order order
     /// @return uid order uid
-    function compute_order_uid(ERC1155_order memory order)
+    function compute_order_uid(ERC1155_sale memory order)
         internal
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encode(order));
+        return keccak256(abi.encode(PEPPER, order));
     }
 }
