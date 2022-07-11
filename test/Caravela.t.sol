@@ -1,0 +1,78 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+import "forge-std/Test.sol";
+import "src/Caravela.sol";
+import "openzeppelin-contracts/contracts/mocks/ERC1155Mock.sol";
+import "openzeppelin-contracts/contracts/mocks/ERC20Mock.sol";
+
+contract ContractTest is Test {
+    address constant MAKER_ADDRESS = address(1);
+    address constant TAKER_ADDRESS = address(2);
+
+    ERC1155Mock collection;
+    ERC20Mock currency;
+    Caravela marketplace;
+
+    function setUp() public {
+        collection = new ERC1155Mock("testCollectionURI");
+        currency = new ERC20Mock(
+            "testName",
+            "testSymbol",
+            TAKER_ADDRESS,
+            1000000
+        );
+        marketplace = new Caravela();
+    }
+
+    function testMakeSale() public {
+        uint256 _id = 1;
+        uint256 _amount = 10;
+        uint256 _value = 1000;
+
+        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+
+        Order.ERC1155_order memory order = Order.ERC1155_order({
+            id: _id,
+            value: _value,
+            collection: collection,
+            currency: currency,
+            amount: _amount,
+            kind: Order.Kind.sale
+        });
+
+        vm.startPrank(MAKER_ADDRESS);
+        collection.setApprovalForAll(address(marketplace), true);
+        marketplace.make_sale(order);
+    }
+
+    function testTakeSale() public {
+        uint256 _id = 1;
+        uint256 _amount = 10;
+        uint256 _value = 1000;
+
+        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+
+        Order.ERC1155_order memory order = Order.ERC1155_order({
+            id: _id,
+            value: _value,
+            collection: collection,
+            currency: currency,
+            amount: _amount,
+            kind: Order.Kind.sale
+        });
+
+        vm.startPrank(MAKER_ADDRESS);
+        collection.setApprovalForAll(address(marketplace), true);
+        marketplace.make_sale(order);
+
+        vm.stopPrank();
+
+        vm.startPrank(TAKER_ADDRESS);
+
+        currency.approve(address(marketplace), _value);
+
+        marketplace.take_sale(order);
+        assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _amount);
+    }
+}

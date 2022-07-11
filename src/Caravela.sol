@@ -32,7 +32,7 @@ contract Caravela is Context, ERC1155Receiver {
         );
 
         collection.safeTransferFrom(
-            _msgSender(), address(this), order.id, order.value, new bytes(0x0)
+            _msgSender(), address(this), order.id, order.amount, new bytes(0x0)
         );
 
         orders[uid] = true;
@@ -48,17 +48,20 @@ contract Caravela is Context, ERC1155Receiver {
         IERC20 currency = order.currency;
 
         require(
-            currency.allowance(_msgSender(), address(this)) >= order.amount,
+            currency.allowance(_msgSender(), address(this)) >= order.value,
             "take_order: marketplace contract allowance is too small to buy token"
         );
 
         bool transaction_succeeded =
-            currency.transferFrom(_msgSender(), address(this), order.amount);
+            currency.transferFrom(_msgSender(), address(this), order.value);
 
         require(
-            transaction_succeeded == true, "take_sale: ERC20 token transfer failedr"
+            transaction_succeeded == true, "take_sale: ERC20 token transfer failed"
         );
 
+        order.collection.safeTransferFrom(
+            address(this), _msgSender(), order.id, order.amount, new bytes(0x0)
+        );
         orders[uid] = false;
     }
 
