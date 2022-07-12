@@ -50,7 +50,7 @@ contract ContractTest is Test {
 
         assertEq(collection.balanceOf(address(marketplace), _id), _value);
 
-        bytes32 uid = Order.compute_order_uid(order);
+        bytes32 uid = Order.compute_sale_uid(order);
         assertEq(marketplace.orders(uid), true);
     }
 
@@ -84,7 +84,7 @@ contract ContractTest is Test {
         marketplace.take_sale(order);
         assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _value);
 
-        bytes32 uid = Order.compute_order_uid(order);
+        bytes32 uid = Order.compute_sale_uid(order);
         assertEq(marketplace.orders(uid), false);
     }
 
@@ -146,7 +146,7 @@ contract ContractTest is Test {
         marketplace.cancel_sale(order);
         assertEq(collection.balanceOf(MAKER_ADDRESS, _id), _value);
 
-        bytes32 uid = Order.compute_order_uid(order);
+        bytes32 uid = Order.compute_sale_uid(order);
         assertEq(marketplace.orders(uid), false);
     }
 }

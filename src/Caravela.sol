@@ -25,7 +25,7 @@ contract Caravela is Context, ERC1155Receiver {
     /// @dev make ERC1155 sale
     /// @param order order
     function make_sale(Order.ERC1155Sale memory order) external {
-        bytes32 uid = Order.compute_order_uid(order);
+        bytes32 uid = Order.compute_sale_uid(order);
 
         require(orders[uid] == false, "make_sale: order is already active");
 
@@ -55,7 +55,7 @@ contract Caravela is Context, ERC1155Receiver {
     /// @dev take ERC1155 sale
     /// @param order order
     function take_sale(Order.ERC1155Sale memory order) external {
-        bytes32 uid = Order.compute_order_uid(order);
+        bytes32 uid = Order.compute_sale_uid(order);
 
         require(orders[uid] == true, "take_sale: order is not active");
         require(order.kind == Order.Kind.sale, "take_sale: order is not a sale");
@@ -86,7 +86,7 @@ contract Caravela is Context, ERC1155Receiver {
     /// @dev cancel ERC1155 sale
     /// @param order order
     function cancel_sale(Order.ERC1155Sale memory order) external {
-        bytes32 uid = Order.compute_order_uid(order);
+        bytes32 uid = Order.compute_sale_uid(order);
 
         require(orders[uid] == true, "cancel_sale: order is not active");
 
@@ -102,10 +102,10 @@ contract Caravela is Context, ERC1155Receiver {
         order.collection.safeTransferFrom(
             address(this), order.emitter, order.id, order.value, new bytes(0x0)
         );
-        
+
         orders[uid] = false;
-        
-        emit CancelledERC1155Sale(uid, order); 
+
+        emit CancelledERC1155Sale(uid, order);
     }
 
     function onERC1155Received(
