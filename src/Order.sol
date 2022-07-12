@@ -13,14 +13,17 @@ library Order {
     enum Kind {sale}
 
     /// @dev ERC1155 order
-    /// @param id id of the order (see ERC1155)
-    /// @param value value of the order (see ERC1155)
+    /// @param id token id (see ERC1155)
+    /// @param value amount of tokens the order (see ERC1155)
+    /// @param price amount of tokens the order (see ERC1155)
     /// @param collection ERC1155 collecction contract
+    /// @param currency ERC20 currency contract
     /// @param kind type of order
+    /// @param emitter type of order
     struct ERC1155Sale {
         uint256 id;
         uint256 value;
-        uint256 amount;
+        uint256 price;
         IERC1155 collection;
         IERC20 currency;
         address emitter;

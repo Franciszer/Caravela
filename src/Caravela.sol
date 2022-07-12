@@ -22,7 +22,8 @@ contract Caravela is Context, ERC1155Receiver {
 
     event CancelledERC1155Sale(bytes32 indexed uid, Order.ERC1155Sale order);
 
-    /// @dev create an order
+    /// @dev make ERC1155 sale
+    /// @param order order
     function make_sale(Order.ERC1155Sale memory order) external {
         bytes32 uid = Order.compute_order_uid(order);
 
@@ -43,7 +44,7 @@ contract Caravela is Context, ERC1155Receiver {
         );
 
         collection.safeTransferFrom(
-            _msgSender(), address(this), order.id, order.amount, new bytes(0x0)
+            _msgSender(), address(this), order.id, order.value, new bytes(0x0)
         );
 
         orders[uid] = true;
@@ -51,8 +52,8 @@ contract Caravela is Context, ERC1155Receiver {
         emit MadeERC1155Sale(uid, order);
     }
 
-    //
-    /// @dev fulfill an order
+    /// @dev take ERC1155 sale
+    /// @param order order
     function take_sale(Order.ERC1155Sale memory order) external {
         bytes32 uid = Order.compute_order_uid(order);
 
@@ -62,19 +63,19 @@ contract Caravela is Context, ERC1155Receiver {
         IERC20 currency = order.currency;
 
         require(
-            currency.allowance(_msgSender(), address(this)) >= order.value,
+            currency.allowance(_msgSender(), address(this)) >= order.price,
             "take_order: marketplace contract allowance is too small to buy token"
         );
 
         bool transaction_succeeded =
-            currency.transferFrom(_msgSender(), order.emitter, order.value);
+            currency.transferFrom(_msgSender(), order.emitter, order.price);
 
         require(
             transaction_succeeded == true, "take_sale: ERC20 token transfer failed"
         );
 
         order.collection.safeTransferFrom(
-            address(this), _msgSender(), order.id, order.amount, new bytes(0x0)
+            address(this), _msgSender(), order.id, order.value, new bytes(0x0)
         );
 
         orders[uid] = false;
@@ -82,6 +83,8 @@ contract Caravela is Context, ERC1155Receiver {
         emit TookERC1155Sale(uid, order);
     }
 
+    /// @dev cancel ERC1155 sale
+    /// @param order order
     function cancel_sale(Order.ERC1155Sale memory order) external {
         bytes32 uid = Order.compute_order_uid(order);
 
@@ -97,7 +100,7 @@ contract Caravela is Context, ERC1155Receiver {
         );
 
         order.collection.safeTransferFrom(
-            address(this), order.emitter, order.id, order.amount, new bytes(0x0)
+            address(this), order.emitter, order.id, order.value, new bytes(0x0)
         );
         
         orders[uid] = false;

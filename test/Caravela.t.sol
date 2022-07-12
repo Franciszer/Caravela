@@ -10,7 +10,7 @@ contract ContractTest is Test {
     address constant MAKER_ADDRESS = address(1);
     address constant TAKER_ADDRESS = address(2);
 
-    uint256 constant INITIAL_VALUE = 1000000;
+    uint256 constant INITIAL_PRICE = 1000000;
 
     ERC1155Mock collection;
     ERC20Mock currency;
@@ -22,25 +22,25 @@ contract ContractTest is Test {
             "testName",
             "testSymbol",
             TAKER_ADDRESS,
-            INITIAL_VALUE
+            INITIAL_PRICE
         );
         marketplace = new Caravela();
     }
 
     function testMakeSale() public {
         uint256 _id = 1;
-        uint256 _amount = 10;
-        uint256 _value = 1000;
+        uint256 _value = 10;
+        uint256 _price = 1000;
 
-        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+        collection.mint(MAKER_ADDRESS, _id, _value, new bytes(0));
 
         Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
-            value: _value,
+            price: _price,
             collection: collection,
             currency: currency,
-            amount: _amount,
+            value: _value,
             kind: Order.Kind.sale
         });
 
@@ -48,7 +48,7 @@ contract ContractTest is Test {
         collection.setApprovalForAll(address(marketplace), true);
         marketplace.make_sale(order);
 
-        assertEq(collection.balanceOf(address(marketplace), _id), _amount);
+        assertEq(collection.balanceOf(address(marketplace), _id), _value);
 
         bytes32 uid = Order.compute_order_uid(order);
         assertEq(marketplace.orders(uid), true);
@@ -56,18 +56,18 @@ contract ContractTest is Test {
 
     function testTakeSale() public {
         uint256 _id = 1;
-        uint256 _amount = 10;
-        uint256 _value = 1000;
+        uint256 _value = 10;
+        uint256 _price = 1000;
 
-        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+        collection.mint(MAKER_ADDRESS, _id, _value, new bytes(0));
 
         Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
-            value: _value,
+            price: _price,
             collection: collection,
             currency: currency,
-            amount: _amount,
+            value: _value,
             kind: Order.Kind.sale
         });
 
@@ -79,10 +79,10 @@ contract ContractTest is Test {
 
         vm.startPrank(TAKER_ADDRESS);
 
-        currency.approve(address(marketplace), _value);
+        currency.approve(address(marketplace), _price);
 
         marketplace.take_sale(order);
-        assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _amount);
+        assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _value);
 
         bytes32 uid = Order.compute_order_uid(order);
         assertEq(marketplace.orders(uid), false);
@@ -90,18 +90,18 @@ contract ContractTest is Test {
 
     function testCurrencyTransfer() public {
         uint256 _id = 1;
-        uint256 _amount = 10;
-        uint256 _value = 1000;
+        uint256 _value = 10;
+        uint256 _price = 1000;
 
-        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+        collection.mint(MAKER_ADDRESS, _id, _value, new bytes(0));
 
         Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
-            value: _value,
+            price: _price,
             collection: collection,
             currency: currency,
-            amount: _amount,
+            value: _value,
             kind: Order.Kind.sale
         });
 
@@ -113,29 +113,29 @@ contract ContractTest is Test {
 
         vm.startPrank(TAKER_ADDRESS);
 
-        currency.approve(address(marketplace), _value);
+        currency.approve(address(marketplace), _price);
 
         marketplace.take_sale(order);
-        assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _amount);
+        assertEq(collection.balanceOf(TAKER_ADDRESS, _id), _value);
 
-        assertEq(currency.balanceOf(MAKER_ADDRESS), _value);
-        assertEq(currency.balanceOf(TAKER_ADDRESS), INITIAL_VALUE - _value);
+        assertEq(currency.balanceOf(MAKER_ADDRESS), _price);
+        assertEq(currency.balanceOf(TAKER_ADDRESS), INITIAL_PRICE - _price);
     }
 
     function testCancelSale() public {
         uint256 _id = 1;
-        uint256 _amount = 10;
-        uint256 _value = 1000;
+        uint256 _value = 10;
+        uint256 _price = 1000;
 
-        collection.mint(MAKER_ADDRESS, _id, _amount, new bytes(0));
+        collection.mint(MAKER_ADDRESS, _id, _value, new bytes(0));
 
         Order.ERC1155Sale memory order = Order.ERC1155Sale({
             emitter: MAKER_ADDRESS,
             id: _id,
-            value: _value,
+            price: _price,
             collection: collection,
             currency: currency,
-            amount: _amount,
+            value: _value,
             kind: Order.Kind.sale
         });
 
@@ -144,7 +144,7 @@ contract ContractTest is Test {
         marketplace.make_sale(order);
 
         marketplace.cancel_sale(order);
-        assertEq(collection.balanceOf(MAKER_ADDRESS, _id), _amount);
+        assertEq(collection.balanceOf(MAKER_ADDRESS, _id), _value);
 
         bytes32 uid = Order.compute_order_uid(order);
         assertEq(marketplace.orders(uid), false);
