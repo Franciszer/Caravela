@@ -2,10 +2,10 @@
 pragma solidity ^0.8.13;
 
 import "openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
-import
-    "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import "openzeppelin-contracts/contracts/utils/Context.sol";
 import "./Order.sol";
+import
+    "openzeppelin-contracts/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
 /// @title Caravela
 /// @author Franciszer
