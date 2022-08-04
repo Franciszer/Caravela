@@ -3,24 +3,18 @@
 
 pragma solidity ^0.8.13;
 
-import "openzeppelin-contracts/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import "openzeppelin-contracts/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "solmate/tokens/ERC20.sol";
+import "solmate/auth/Owned.sol";
 
-contract Spice is ERC20PresetMinterPauser, ERC20Permit {
-    constructor(string memory name_, string memory symbol_)
-        ERC20PresetMinterPauser	(name_, symbol_)
-        ERC20Permit(name_)
-    {}
+contract Spice is ERC20, Owned {
+    constructor(
+        address owner,
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals
+    ) ERC20(_name, _symbol, _decimals) Owned(owner) {}
 
-	function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override(ERC20, ERC20PresetMinterPauser) {
-        super._beforeTokenTransfer(from, to, amount);
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
     }
-
-	function permit_typehash() external view {
-		return 
-	}
 }

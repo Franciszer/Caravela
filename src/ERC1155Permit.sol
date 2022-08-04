@@ -1,29 +1,89 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "./IERC1155Permit.sol";
-import "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
-import "openzeppelin-contracts/contracts/utils/cryptography/draft-EIP712.sol";
-import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
-import "openzeppelin-contracts/contracts/utils/Counters.sol";
+import "solmate/tokens/ERC1155.sol";
+import "solmate/auth/Owned.sol";
 
-/**
- * @dev Implementation of the ERC1155 Permit extension allowing approvals to be made via signatures, as defined in
- * https://eips.ethereum.org/EIPS/eip-2612[EIP-2612].
- */
+contract ERC1155Permit is ERC1155, Owned {
+    /*//////////////////////////////////////////////////////////////
+                            METADATA STORAGE
+    //////////////////////////////////////////////////////////////*/
 
-abstract contract ERC1155Permit is ERC1155, IERC1155Permit, EIP712 {
-    using Counters for Counters.Counter;
+    string public name;
 
-    mapping(address => Counters.Counter) private _nonces;
+    string public symbol;
 
-    constructor(string memory name, string memory version) EIP712(name, version) {}
+    mapping(uint256 => string) uris;
 
-    // solhint-disable-next-line var-name-mixedcase
-    bytes32 private constant _PERMIT_TYPEHASH =
+    /*//////////////////////////////////////////////////////////////
+                            PERMIT STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    bytes32 constant PERMIT_TRANSFER_SINGLE_TYPEHASH =
         keccak256(
-            "Permit(address owner,address operator,uint256 id,uint256 amount,uint256 nonce,uint256 deadline)"
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
+
+    uint256 internal immutable INITIAL_CHAIN_ID;
+
+    bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
+
+    mapping(address => uint256) public nonces;
+
+    /*//////////////////////////////////////////////////////////////
+                               CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    constructor(
+        address owner,
+        string memory _name,
+        string memory _symbol
+    ) Owned(owner) {
+        name = _name;
+        symbol = _symbol;
+
+        INITIAL_CHAIN_ID = block.chainid;
+        INITIAL_DOMAIN_SEPARATOR = computeDomainSeparator();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             ERC-1155 LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function mint(
+        address to,
+        uint256 id,
+        uint256 amount
+    ) external onlyOwner {
+        _mint(to, id, amount, "");
+    }
+
+    function batchMint(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) external onlyOwner {
+        _batchMint(to, ids, amounts, data);
+    }
+
+    function _setApprovalForAll(address owner, address operator, bool approved) internal {
+        isApprovedForAll[owner][operator] = approved;
+
+        emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    function uri(uint256 id) public view override returns (string memory) {
+        return uris[id];
+    }
+
+    function setURI(uint256 id, string memory _uri) public {
+        uris[id] = _uri;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             EIP-2612 LOGIC
+    //////////////////////////////////////////////////////////////*/
 
     function permit(
         address owner,
@@ -34,64 +94,82 @@ abstract contract ERC1155Permit is ERC1155, IERC1155Permit, EIP712 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external override {
-        if (block.timestamp > deadline) revert ExpiredDeadline();
+    ) public virtual {
+        require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
-        bytes32 structHash = keccak256(
-            abi.encode(
-                _PERMIT_TYPEHASH,
-                owner,
-                operator,
-                id,
-                amount,
-                _useNonce(owner),
-                deadline
-            )
-        );
+        // Unchecked because the only math done is incrementing
+        // the owner's nonce which cannot realistically overflow.
+        unchecked {
+            address recoveredAddress = ecrecover(
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        DOMAIN_SEPARATOR(),
+                        _computePermitTransferSingle(
+                            owner,
+                            operator,
+                            id,
+                            amount,
+                            deadline
+                        )
+                    )
+                ),
+                v,
+                r,
+                s
+            );
 
-        bytes32 hash = _hashTypedDataV4(structHash);
+            require(
+                recoveredAddress != address(0) && recoveredAddress == owner,
+                "INVALID_SIGNER"
+            );
 
-        address signer = ECDSA.recover(hash, v, r, s);
-        if (signer != owner) revert InvalidSignature();
+            _setApprovalForAll(owner, operator, true);
+        }
 
-		_setApprovalForAll(owner, operator, true);
+        emit ApprovalForAll(owner, operator, true);
     }
 
-    /**
-     * @dev See {IERC1155Permit-nonces}.
-     */
-    function nonces(address owner)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _nonces[owner].current();
+    function _computePermitTransferSingle(
+        address owner,
+        address operator,
+        uint256 id,
+        uint256 amount,
+        uint256 deadline
+    ) internal returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    PERMIT_TRANSFER_SINGLE_TYPEHASH,
+                    owner,
+                    operator,
+                    id,
+                    amount,
+                    nonces[owner]++,
+                    deadline
+                )
+            );
     }
 
-    /**
-     * @dev "Consume a nonce": return the current value and increment.
-     *
-     */
-    function _useNonce(address owner)
-        internal
-        virtual
-        returns (uint256 current)
-    {
-        Counters.Counter storage nonce = _nonces[owner];
-        current = nonce.current();
-        nonce.increment();
+    function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
+        return
+            block.chainid == INITIAL_CHAIN_ID
+                ? INITIAL_DOMAIN_SEPARATOR
+                : computeDomainSeparator();
     }
 
-	/**
-     * @dev See {IERC20Permit-DOMAIN_SEPARATOR}.
-     */
-    // solhint-disable-next-line func-name-mixedcase
-    function DOMAIN_SEPARATOR() external view override returns (bytes32) {
-        return _domainSeparatorV4();
+    function computeDomainSeparator() internal view virtual returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                    ),
+                    keccak256(bytes(name)),
+                    keccak256("1"),
+                    block.chainid,
+                    address(this)
+                )
+            );
     }
-
-    error ExpiredDeadline();
-    error InvalidSignature();
 }
